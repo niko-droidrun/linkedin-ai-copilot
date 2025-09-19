@@ -14,6 +14,7 @@ from typing import Dict, Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
 from dotenv import load_dotenv
 
@@ -319,6 +320,15 @@ app = FastAPI(
     title="LinkedIn Profile Scraper API",
     description="REST API for scraping LinkedIn profiles with RAMS caching",
     version="1.0.0"
+)
+
+# Add CORS middleware to allow browser extension requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for development
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods
+    allow_headers=["*"],  # Allow all headers
 )
 
 class LinkedInRequest(BaseModel):
