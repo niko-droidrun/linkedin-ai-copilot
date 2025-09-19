@@ -11,24 +11,45 @@ export default function ProfileSummary({ profile }: ProfileSummaryProps) {
       {/* Top: Avatar and Basic Info */}
       <div className="flex items-center gap-3">
         <img
-          src={profile.avatarUrl}
+          src={profile.avatarUrl || profile.avatar || "https://static.licdn.com/aero-v1/sc/h/9c8pery4andzj6ohjkjp54ma2"}
           alt={profile.name}
           className="rounded-full w-12 h-12 object-cover"
         />
         <div>
           <div className="font-bold text-sm">{profile.name}</div>
           <div className="text-gray-500 text-xs">
-            {profile.title} {profile.company ? `at ${profile.company}` : ""}
+            {profile.title || "LinkedIn User"} {profile.company || profile.current_company?.name ? `at ${profile.company || profile.current_company?.name}` : ""}
           </div>
-          {profile.location && (
-            <div className="text-gray-400 text-xs">{profile.location}</div>
+          {(profile.location || profile.city) && (
+            <div className="text-gray-400 text-xs">{profile.location || profile.city}</div>
           )}
         </div>
+      </div>
+
+      {/* LinkedIn Stats */}
+      <div className="flex gap-4 text-xs text-gray-600">
+        {profile.followers !== undefined && (
+          <div>
+            <span className="font-semibold">{profile.followers}</span> followers
+          </div>
+        )}
+        {profile.connections !== undefined && (
+          <div>
+            <span className="font-semibold">{profile.connections}</span> connections
+          </div>
+        )}
       </div>
 
       {/* Summary */}
       {profile.summary && (
         <div className="text-gray-500 text-xs">{profile.summary}</div>
+      )}
+
+      {/* Activity Summary */}
+      {profile.activity_summary && (
+        <div className="text-gray-500 text-xs bg-blue-50 p-2 rounded">
+          <span className="font-semibold">Recent Activity:</span> {profile.activity_summary}
+        </div>
       )}
 
       {/* Skills */}
@@ -70,6 +91,30 @@ export default function ProfileSummary({ profile }: ProfileSummaryProps) {
         </div>
       )}
 
+      {/* Recent Activities */}
+      {profile.activity && profile.activity.length > 0 && (
+        <div className="text-gray-600 text-xs space-y-1">
+          <div className="font-semibold text-gray-700">Recent Activities:</div>
+          {profile.activity.slice(0, 3).map((activity, idx) => (
+            <div key={activity.id} className="bg-white p-2 rounded border">
+              <div className="text-gray-500 text-xs">{activity.interaction}</div>
+              <div className="font-medium text-xs mt-1 line-clamp-2">
+                {activity.title.length > 80 ? `${activity.title.substring(0, 80)}...` : activity.title}
+              </div>
+              {activity.link && (
+                <a
+                  href={activity.link}
+                  target="_blank"
+                  className="text-blue-600 text-xs underline mt-1 inline-block"
+                >
+                  View Post
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Social Links */}
       {profile.social && (
         <div className="flex gap-2 mt-1 text-xs">
@@ -87,6 +132,11 @@ export default function ProfileSummary({ profile }: ProfileSummaryProps) {
           )}
         </div>
       )}
+
+      {/* LinkedIn ID */}
+      <div className="text-gray-400 text-xs">
+        ID: {profile.linkedin_id}
+      </div>
     </div>
   )
 }

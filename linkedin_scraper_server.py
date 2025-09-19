@@ -155,25 +155,66 @@ async def smart_linkedin_scraper(profile_url: str, user_id: str = "scraper_user"
     )
     
     try:
-        # Step 1: Check RAMS first
+        # Step 1: Check RAMS first with multiple search strategies
         print(f"🔍 Checking RAMS for cached data for username: {username}")
-        search_results = await client.search_memory_tool(
-            query=f"LinkedIn profile {username}",
-            topics=["linkedin", "profile", username],
-            user_id=user_id,
-            max_results=1,
-            min_relevance=0.5
-        )
         
-        if search_results['memories']:
-            # Found cached data in RAMS
-            memory = search_results['memories'][0]
+        # Try different search strategies to find cached data
+        search_strategies = [
+            # Strategy 1: Exact username match
+            {
+                "query": username,
+                "topics": ["linkedin", "profile", username],
+                "min_relevance": 0.3
+            },
+            # Strategy 2: Profile query
+            {
+                "query": f"LinkedIn profile {username}",
+                "topics": ["linkedin", "profile"],
+                "min_relevance": 0.3
+            },
+            # Strategy 3: Broader search
+            {
+                "query": f"profile {username}",
+                "topics": ["linkedin"],
+                "min_relevance": 0.2
+            }
+        ]
+        
+        cached_data = None
+        for i, strategy in enumerate(search_strategies):
             try:
-                cached_data = json.loads(memory['text'])
-                print(f"📂 ✅ Found cached data in RAMS!")
-                return cached_data
-            except json.JSONDecodeError:
-                print(f"⚠️ Cached data corrupted, falling back to BrightData")
+                search_results = await client.search_memory_tool(
+                    query=strategy["query"],
+                    topics=strategy["topics"],
+                    user_id=user_id,
+                    max_results=5,
+                    min_relevance=strategy["min_relevance"]
+                )
+                
+                if search_results['memories']:
+                    # Check each memory to find the right profile
+                    for memory in search_results['memories']:
+                        try:
+                            data = json.loads(memory['text'])
+                            # Check if this memory contains our target username
+                            if (data.get('linkedin_id') == username or
+                                data.get('id') == username or
+                                username in memory['text']):
+                                cached_data = data
+                                print(f"📂 ✅ Found cached data in RAMS (strategy {i+1})!")
+                                break
+                        except json.JSONDecodeError:
+                            continue
+                    
+                    if cached_data:
+                        break
+                        
+            except Exception as e:
+                print(f"⚠️ RAMS search strategy {i+1} failed: {e}")
+                continue
+        
+        if cached_data:
+            return cached_data
         
         # Step 2: No cached data found, use BrightData
         print(f"🌐 No cached data in RAMS, scraping from BrightData...")
